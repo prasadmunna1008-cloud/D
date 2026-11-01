@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Voice & Text Dictionary / Diary</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f7f6;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: #ffffff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+        h2 {
+            text-align: center;
+            color: #333;
+        }
+        .input-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        input[type="text"] {
+            flex: 1;
+            padding: 10px;
+            font-size: 16px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        button {
+            padding: 10px 15px;
+            font-size: 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            background-color: #007bff;
+            color: white;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        #micBtn {
+            background-color: #28a745;
+        }
+        #micBtn.listening {
+            background-color: #dc3545;
+            animation: pulse 1.5s infinite;
+        }
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+        ul {
+            list-style-type: none;
+            padding: 0;
+        }
+        li {
+            background: #f9f9f9;
+            margin-bottom: 8px;
+            padding: 10px;
+            border-left: 4px solid #007bff;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-radius: 4px;
+        }
+        .delete-btn {
+            background: none;
+            border: none;
+            color: #red;
+            cursor: pointer;
+            font-weight: bold;
+            color: #dc3545;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>मेरी वॉयस और टेक्स्ट डायरी</h2>
+    
+    <div class="input-group">
+        <input type="text" id="userInput" placeholder="यहाँ टाइप करें या माइक दबाकर बोलें...">
+        <button id="micBtn" onclick="toggleSpeechRecognition()">🎙️ बोलें</button>
+        <button onclick="addEntry()">जोड़ें</button>
+    </div>
+
+    <ul id="entryList">
+        <!-- रिकॉर्ड किए गए शब्द या बातें यहाँ दिखेंगी -->
+    </ul>
+</div>
+
+<script>
+    const userInput = document.getElementById('userInput');
+    const entryList = document.getElementById('entryList');
+    const micBtn = document.getElementById('micBtn');
+
+    let recognition;
+    let isListening = false;
+
+    // Web Speech API सेटअप
+    if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        recognition = new SpeechRecognition();
+        recognition.continuous = false;
+        recognition.interimResults = false;
+        recognition.lang = 'hi-IN'; // हिंदी भाषा के लिए सेट किया गया है (आप चाहें तो 'en-US' भी कर सकते हैं)
+
+        recognition.onstart = function() {
+            isListening = true;
+            micBtn.classList.add('listening');
+            micBtn.innerText = "सुन रहे हैं...";
+        };
+
+        recognition.onresult = function(event) {
+            const transcript = event.results[0][0].transcript;
+            userInput.value = transcript;
+        };
+
+        recognition.onerror = function(event) {
+            console.error("Speech recognition error", event.error);
+            stopListening();
+        };
+
+        recognition.onend = function() {
+            stopListening();
+        };
+    } else {
+        micBtn.style.display = 'none';
+        alert("आपका ब्राउज़र वॉइस इनपुट सपोर्ट नहीं करता है।");
+    }
+
+    function toggleSpeechRecognition() {
+        if (!recognition) return;
+        if (isListening) {
+            recognition.stop();
+        } else {
+            recognition.start();
+        }
+    }
+
+    function stopListening() {
+        isListening = false;
+        micBtn.classList.remove('listening');
+        micBtn.innerText = "🎙️ बोलें";
+    }
+
+    function addEntry() {
+        const text = userInput.value.trim();
+        if (text === "") return;
+
+        const li = document.createElement('li');
+        li.innerHTML = `<span>${text}</span> <button class="delete-btn" onclick="this.parentElement.remove()">✕</button>`;
+        
+        entryList.appendChild(li);
+        userInput.value = "";
+    }
+
+    // Enter बटन दबाने पर भी टेक्स्ट जुड़ जाएगा
+    userInput.addEventListener("keypress", function(event) {
+        if (event.key === "Enter") {
+            addEntry();
+        }
+    });
+</script>
+
+</body>
+</html>
